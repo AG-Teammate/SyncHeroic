@@ -3,6 +3,12 @@ name: Release
 on:
   push:
     tags: ["v*.*.*"]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing SemVer tag to build and publish
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -13,12 +19,15 @@ jobs:
   release:
     runs-on: ubuntu-latest
     env:
+      RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
       SYNC_HEROIC_KEYSTORE_PATH: ${{ github.workspace }}/release.jks
       SYNC_HEROIC_STORE_PASSWORD: ${{ secrets.SYNC_HEROIC_STORE_PASSWORD }}
       SYNC_HEROIC_KEY_ALIAS: ${{ secrets.SYNC_HEROIC_KEY_ALIAS }}
       SYNC_HEROIC_KEY_PASSWORD: ${{ secrets.SYNC_HEROIC_KEY_PASSWORD }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ env.RELEASE_TAG }}
       - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
         with:
           distribution: temurin
@@ -32,7 +41,7 @@ jobs:
         run: printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$SYNC_HEROIC_KEYSTORE_PATH"
       - name: Verify and build release
         env:
-          VERSION_NAME: ${{ github.ref_name }}
+          VERSION_NAME: ${{ env.RELEASE_TAG }}
           VERSION_CODE: ${{ github.run_number }}
         run: |
           [[ "$VERSION_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
@@ -41,15 +50,15 @@ jobs:
           ./gradlew --no-daemon check :app:assembleRelease
       - name: Prepare verifiable artifacts
         run: |
-          cp app/build/outputs/apk/release/app-release.apk "SyncHeroic-${GITHUB_REF_NAME}.apk"
-          shasum -a 256 "SyncHeroic-${GITHUB_REF_NAME}.apk" > SHA256SUMS.txt
-          apksigner verify --print-certs "SyncHeroic-${GITHUB_REF_NAME}.apk" > CERTIFICATE.txt
+          cp app/build/outputs/apk/release/app-release.apk "SyncHeroic-${RELEASE_TAG}.apk"
+          shasum -a 256 "SyncHeroic-${RELEASE_TAG}.apk" > SHA256SUMS.txt
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --print-certs "SyncHeroic-${RELEASE_TAG}.apk" > CERTIFICATE.txt
           ./gradlew :app:dependencies > dependencies.txt
       - name: Attest signed APK provenance
         uses: actions/attest-build-provenance@43d14bc2b83dec42d39ecae14e916627a18bb661
         with:
-          subject-path: SyncHeroic-${{ github.ref_name }}.apk
+          subject-path: SyncHeroic-${{ env.RELEASE_TAG }}.apk
       - name: Publish GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" "SyncHeroic-${GITHUB_REF_NAME}.apk" SHA256SUMS.txt CERTIFICATE.txt dependencies.txt --verify-tag --generate-notes
+        run: gh release create "$RELEASE_TAG" "SyncHeroic-${RELEASE_TAG}.apk" SHA256SUMS.txt CERTIFICATE.txt dependencies.txt --verify-tag --generate-notes
