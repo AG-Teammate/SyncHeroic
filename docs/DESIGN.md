@@ -43,7 +43,8 @@ The application does not:
 
 The following properties were measured against a reference corpus: one account, one coaching
 program, sixteen months of history, 423 workouts. Every design decision in this document
-follows from them. Validate them against a second account before 1.0 (§13.5).
+follows from them. Broader account and programming variations are treated as ongoing
+compatibility evidence rather than a release prerequisite.
 
 | Property | Observed | Consequence |
 |---|---|---|
@@ -598,11 +599,9 @@ Resolve before or during the milestone indicated.
    the password inside the Android Keystore-protected credential envelope for reauthentication.
 4. **Measure the Health Connect notes length cap**, which is undocumented. Blocking for
    milestone 3.
-5. **Validate §2 against a second account.** Every figure derives from one account, one coach,
-   and one programming style. Required before 1.0.
-6. **Measure wearable sync lag across a representative period**, which determines whether the
+5. **Measure wearable sync lag across a representative period**, which determines whether the
    default grace period in §6.4 is generous or tight. The setting is user-adjustable regardless.
-7. **Decode the exercise library's parameter-type enums** across a wider library than the
+6. **Decode the exercise library's parameter-type enums** across a wider library than the
    reference corpus resolves.
 
 ---

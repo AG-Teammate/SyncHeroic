@@ -23,7 +23,8 @@ Everything it writes can be removed from the Data and privacy screen.
 The project is under active development and is not yet a validated 1.0 release.
 The behavior described in [the design](docs/DESIGN.md) has been validated against
 one private account; see the aggregate-only [validation report](docs/VALIDATION.md).
-A second account remains required before 1.0.
+Additional account and programming variations are welcome as ongoing compatibility
+evidence, but are not a release requirement.
 
 ## Build
 
