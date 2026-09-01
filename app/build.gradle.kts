@@ -52,7 +52,9 @@ android {
         abortOnError = true
         warningsAsErrors = true
         checkReleaseBuilds = true
-        disable += setOf("GradleDependency", "AndroidGradlePluginVersion")
+        // API 36 is the project's tested stable target. Hosted runners may expose
+        // preview/newer SDK metadata before the project deliberately adopts it.
+        disable += setOf("GradleDependency", "AndroidGradlePluginVersion", "OldTargetApi")
     }
 }
 
