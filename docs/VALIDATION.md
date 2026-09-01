@@ -41,6 +41,40 @@ and coaching text are not stored in the repository.
   has different or additional semantics and is retained only as a drift signal;
   SyncHeroic does not write or display a computed volume aggregate.
 
+## Physical device validation
+
+Validated on a Google Pixel 9 Pro XL running Android 17 (API 37) with the
+system Health Connect controller. The device serial, build fingerprint, account
+details, workout dates, titles, notes, and identifiers were not recorded.
+
+- The isolated debug application installed, cold-launched, authenticated, and
+  stored its credential envelope without an application error.
+- Health Connect granted exercise read/write, history-read, and background-read
+  access through the system permission flow.
+- A 30-day preview proposed 9 inserts and 17 skips. Applying that exact preview
+  wrote 9 sessions; repeating the preview produced 9 unchanged records, 17
+  skips, and no inserts or updates.
+- Health Connect displayed exactly one SyncHeroic entry on each of the 9 expected
+  days. Each coexisted with an existing Health-origin entry, and days containing
+  only Health-origin data remained unchanged.
+- Imported titles, times, and notes rendered in Health Connect at the lengths
+  present in the observed corpus.
+- The schema report contained 260 observations across 10 unknown JSON paths and
+  zero unparsed performed values. Unknown paths are reported rather than mapped
+  speculatively.
+
+### Accepted v0.1.0 limitations
+
+- Update and grace-period hold actions were not induced against live upstream
+  data; their deterministic planner behavior is covered by automated tests.
+- Destructive deletion and delete-after-reinstall flows were not exercised on
+  the personal device.
+- Notes rendered correctly at observed lengths, but Health Connect's practical
+  maximum notes length was not measured with a synthetic record.
+- Long-term wearable sync lag was not measured. The observed sessions matched
+  existing Health-origin sessions without modifying or removing them, and the
+  grace period remains user-adjustable.
+
 ## Validation scope
 
 These findings derive from one private account and its programming history.

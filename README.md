@@ -24,7 +24,9 @@ The project is under active development and is not yet a validated 1.0 release.
 The behavior described in [the design](docs/DESIGN.md) has been validated against
 one private account; see the aggregate-only [validation report](docs/VALIDATION.md).
 Additional account and programming variations are welcome as ongoing compatibility
-evidence, but are not a release requirement.
+evidence, but are not a release requirement. The v0.1.0 flow was also exercised on
+a physical Android 17 device; untested destructive paths are documented as accepted
+limitations rather than implied successes.
 
 ## Build
 
