@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "exercises": {
+    "back squat": "squat",
+    "front squat": "squat",
+    "air squat": "squat",
+    "deadlift": "deadlift",
+    "sumo deadlift": "deadlift",
+    "bench press": "bench_press",
+    "pull-up": "pull_up",
+    "pull up": "pull_up",
+    "strict press": "barbell_shoulder_press",
+    "shoulder press": "shoulder_press",
+    "kettlebell swing": "kettlebell_swing",
+    "burpee": "burpee",
+    "walking lunge": "lunge",
+    "lunge": "lunge"
+  }
+}

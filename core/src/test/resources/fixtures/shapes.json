@@ -1,0 +1,36 @@
+{
+  "workouts": [
+    {
+      "id": "synthetic-001",
+      "date": "2025-01-01",
+      "logged": true,
+      "title": "2025-01-01",
+      "programName": "Invented Program",
+      "newServerField": 42,
+      "blocks": [
+        {
+          "title": "Strength",
+          "exercises": [
+            {
+              "id": "invented-exercise-1",
+              "name": "Invented Squat",
+              "units": ["reps", "lb"],
+              "sets": [
+                {"number": 1, "value": "5 @ 100"},
+                {"number": 3, "value": "unexpected value"}
+              ]
+            }
+          ]
+        },
+        {"title": "Circuit", "text": "INVENTED AMRAP 10 / 8 FICTIONAL MOVEMENTS", "exercises": []}
+      ]
+    },
+    {
+      "id": "synthetic-002",
+      "date": "2025-01-02",
+      "logged": false,
+      "blocks": [{"title": "Recovery", "text": "Invented prose only.", "exercises": []}]
+    }
+  ]
+}
+

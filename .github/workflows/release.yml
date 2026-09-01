@@ -1,0 +1,55 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      SYNC_HEROIC_KEYSTORE_PATH: ${{ github.workspace }}/release.jks
+      SYNC_HEROIC_STORE_PASSWORD: ${{ secrets.SYNC_HEROIC_STORE_PASSWORD }}
+      SYNC_HEROIC_KEY_ALIAS: ${{ secrets.SYNC_HEROIC_KEY_ALIAS }}
+      SYNC_HEROIC_KEY_PASSWORD: ${{ secrets.SYNC_HEROIC_KEY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+      - uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407
+      - run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - name: Restore signing key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.SYNC_HEROIC_KEYSTORE_BASE64 }}
+        run: printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$SYNC_HEROIC_KEYSTORE_PATH"
+      - name: Verify and build release
+        env:
+          VERSION_NAME: ${{ github.ref_name }}
+          VERSION_CODE: ${{ github.run_number }}
+        run: |
+          [[ "$VERSION_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          VERSION_NAME="${VERSION_NAME#v}"
+          export VERSION_NAME
+          ./gradlew --no-daemon check :app:assembleRelease
+      - name: Prepare verifiable artifacts
+        run: |
+          cp app/build/outputs/apk/release/app-release.apk "SyncHeroic-${GITHUB_REF_NAME}.apk"
+          shasum -a 256 "SyncHeroic-${GITHUB_REF_NAME}.apk" > SHA256SUMS.txt
+          apksigner verify --print-certs "SyncHeroic-${GITHUB_REF_NAME}.apk" > CERTIFICATE.txt
+          ./gradlew :app:dependencies > dependencies.txt
+      - name: Attest signed APK provenance
+        uses: actions/attest-build-provenance@43d14bc2b83dec42d39ecae14e916627a18bb661
+        with:
+          subject-path: SyncHeroic-${{ github.ref_name }}.apk
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" "SyncHeroic-${GITHUB_REF_NAME}.apk" SHA256SUMS.txt CERTIFICATE.txt dependencies.txt --verify-tag --generate-notes

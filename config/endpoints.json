@@ -1,0 +1,6 @@
+{
+  "schemaVersion": 1,
+  "auth": {"host": "apis.trainheroic.com", "method": "POST", "path": "/auth"},
+  "profile": {"host": "api.trainheroic.com", "method": "GET", "path": "/user/simple"},
+  "workouts": {"host": "api.trainheroic.com", "method": "GET", "path": "/3.0/athlete/programworkout/range"}
+}
