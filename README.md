@@ -28,6 +28,8 @@ evidence, but are not a release requirement. The v0.1.0 flow was also exercised 
 a physical Android 17 device; untested destructive paths are documented as accepted
 limitations rather than implied successes.
 
+Work planned before the stable 1.0 contract is tracked in [TODO.md](TODO.md).
+
 ## Build
 
 Requirements: JDK 21 and an Android SDK containing API 36.
