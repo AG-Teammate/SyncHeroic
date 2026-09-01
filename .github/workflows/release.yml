@@ -55,7 +55,7 @@ jobs:
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --print-certs "SyncHeroic-${RELEASE_TAG}.apk" > CERTIFICATE.txt
           ./gradlew :app:dependencies > dependencies.txt
       - name: Attest signed APK provenance
-        uses: actions/attest-build-provenance@43d14bc2b83dec42d39ecae14e916627a18bb661
+        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a
         with:
           subject-path: SyncHeroic-${{ env.RELEASE_TAG }}.apk
       - name: Publish GitHub release
