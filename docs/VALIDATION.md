@@ -41,14 +41,15 @@ and coaching text are not stored in the repository.
   has different or additional semantics and is retained only as a drift signal;
   SyncHeroic does not write or display a computed volume aggregate.
 
-## Remaining release gate
+## Validation scope
 
-These findings still derive from one account. A second private account with a
-different program and unit mix remains required before 1.0.
+These findings derive from one private account and its programming history.
+Additional account shapes can broaden compatibility evidence over time, but are
+not required for a release. Strict parsing, preview, and fail-closed behavior
+remain the safeguards for data shapes the reference corpus has not demonstrated.
 
 Maintainers can reproduce the shape-only probe with:
 
 ```shell
 node tools/live-validate.mjs .private/trainheroic.env
 ```
-
