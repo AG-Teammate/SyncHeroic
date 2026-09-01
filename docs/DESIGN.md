@@ -597,10 +597,11 @@ Resolve before or during the milestone indicated.
    profile session count and volume use broader definitions than performed-set mapping.
 3. **Resolved:** sign-in returns a session ID with no refresh token or declared lifetime. Retain
    the password inside the Android Keystore-protected credential envelope for reauthentication.
-4. **Measure the Health Connect notes length cap**, which is undocumented. Blocking for
-   milestone 3.
-5. **Measure wearable sync lag across a representative period**, which determines whether the
-   default grace period in §6.4 is generous or tight. The setting is user-adjustable regardless.
+4. **Accepted v0.1.0 limitation:** notes rendered at the lengths in the reference corpus, but
+   Health Connect's undocumented maximum notes length was not measured synthetically.
+5. **Partially resolved:** device validation confirmed alignment with existing Health-origin
+   sessions. Long-term wearable sync lag remains unmeasured; the grace period in §6.4 is
+   user-adjustable.
 6. **Decode the exercise library's parameter-type enums** across a wider library than the
    reference corpus resolves.
 
