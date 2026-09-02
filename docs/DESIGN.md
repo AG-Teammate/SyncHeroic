@@ -137,8 +137,9 @@ has no logging interceptor; CI scans for committed secret patterns.
 ### 4.3 Requests
 
 Back off exponentially on 5xx. Retry once on 401 after re-authenticating. Fail on other 4xx
-responses and surface the status in the UI. Do not poll: sync runs daily in the background and
-on explicit user action.
+responses and surface the status in the UI. By default, sync runs daily in the background and
+on explicit user action. Users may opt into 15-minute polling during a configurable daily workout
+window; opening the app also enqueues a throttled recent sync.
 
 ---
 

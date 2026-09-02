@@ -44,6 +44,12 @@ data class LedgerEntry(
     )
 }
 
+data class FrequentSyncSettings(
+    val enabled: Boolean = false,
+    val start: LocalTime = LocalTime.of(12, 0),
+    val end: LocalTime = LocalTime.of(13, 30),
+)
+
 class LocalStateStore(private val context: Context) {
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
 
@@ -86,6 +92,30 @@ class LocalStateStore(private val context: Context) {
 
     suspend fun setRemoteConfig(enabled: Boolean) { context.dataStore.edit { it[REMOTE_CONFIG] = enabled } }
     suspend fun remoteConfigEnabled(): Boolean = context.dataStore.data.first()[REMOTE_CONFIG] ?: false
+    suspend fun frequentSyncSettings(): FrequentSyncSettings {
+        val values = context.dataStore.data.first()
+        return FrequentSyncSettings(
+            enabled = values[FREQUENT_SYNC_ENABLED] ?: false,
+            start = parseTime(values[FREQUENT_SYNC_START], LocalTime.of(12, 0)),
+            end = parseTime(values[FREQUENT_SYNC_END], LocalTime.of(13, 30)),
+        )
+    }
+
+    suspend fun setFrequentSync(enabled: Boolean, start: LocalTime, end: LocalTime) {
+        require(end.isAfter(start)) { "Frequent sync end must be after its start" }
+        require(Duration.between(start, end) >= Duration.ofMinutes(15)) { "Frequent sync window must be at least 15 minutes" }
+        context.dataStore.edit { values ->
+            values[FREQUENT_SYNC_ENABLED] = enabled
+            values[FREQUENT_SYNC_START] = start.toString()
+            values[FREQUENT_SYNC_END] = end.toString()
+        }
+    }
+
+    suspend fun markAutomaticAttempt(instant: Instant) {
+        context.dataStore.edit { it[LAST_AUTOMATIC_ATTEMPT] = instant.toEpochMilli() }
+    }
+
+    suspend fun lastAutomaticAttempt(): Instant? = context.dataStore.data.first()[LAST_AUTOMATIC_ATTEMPT]?.let(Instant::ofEpochMilli)
     suspend fun updateSettings(
         startTime: LocalTime,
         durationMinutes: Int,
@@ -118,8 +148,15 @@ class LocalStateStore(private val context: Context) {
         val NOTES_CAP = intPreferencesKey("notes_cap")
         val WEIGHT_UNIT = stringPreferencesKey("weight_unit")
         val REMOTE_CONFIG = booleanPreferencesKey("remote_config")
+        val FREQUENT_SYNC_ENABLED = booleanPreferencesKey("frequent_sync_enabled")
+        val FREQUENT_SYNC_START = stringPreferencesKey("frequent_sync_start")
+        val FREQUENT_SYNC_END = stringPreferencesKey("frequent_sync_end")
+        val LAST_AUTOMATIC_ATTEMPT = longPreferencesKey("last_automatic_attempt")
         val LAST_SUCCESS = longPreferencesKey("last_success")
         val DRIFT_COUNT = intPreferencesKey("drift_count")
         val LEDGER = stringPreferencesKey("ledger_v1")
+
+        fun parseTime(value: String?, fallback: LocalTime): LocalTime =
+            runCatching { LocalTime.parse(value) }.getOrDefault(fallback)
     }
 }
