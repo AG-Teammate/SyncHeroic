@@ -48,6 +48,7 @@ import app.syncheroic.MainViewModel
 import app.syncheroic.core.MatchedSessionBehavior
 import app.syncheroic.core.PlanAction
 import app.syncheroic.core.WeightUnit
+import app.syncheroic.data.FrequentSyncSettings
 import java.time.LocalTime
 
 private enum class Destination(val label: String) { HOME("Home"), SESSIONS("Sessions"), SETTINGS("Settings"), PRIVACY("Privacy") }
@@ -86,7 +87,7 @@ fun SyncHeroicApp(model: MainViewModel, healthAvailable: Int, requestPermissions
                 when (destination) {
                     Destination.HOME -> HomeScreen(state.busy, state.summary?.lastSuccess?.toString(), state.summary?.driftCount ?: 0, state.preview, healthAvailable, requestPermissions, { model.preview() }, model::previewFullHistory, model::importPreview)
                     Destination.SESSIONS -> SessionsScreen(state.preview)
-                    Destination.SETTINGS -> SettingsScreen(state.settings, state.remoteConfigEnabled, model::saveSettings)
+                    Destination.SETTINGS -> SettingsScreen(state.settings, state.remoteConfigEnabled, state.frequentSync, model::saveSettings)
                     Destination.PRIVACY -> DataPrivacyScreen(state.preview?.drift, model::deleteRecords, model::signOutAndWipe)
                 }
                 if (state.busy) CircularProgressIndicator(Modifier.align(Alignment.Center))
@@ -199,7 +200,12 @@ private fun SessionsScreen(preview: app.syncheroic.sync.SyncPreview?) {
 }
 
 @Composable
-private fun SettingsScreen(settings: app.syncheroic.core.SyncSettings?, remoteConfigEnabled: Boolean, save: (LocalTime, Int, Int, MatchedSessionBehavior, Boolean, Int, WeightUnit, Boolean) -> Unit) {
+private fun SettingsScreen(
+    settings: app.syncheroic.core.SyncSettings?,
+    remoteConfigEnabled: Boolean,
+    frequentSync: FrequentSyncSettings,
+    save: (LocalTime, Int, Int, MatchedSessionBehavior, Boolean, Int, WeightUnit, Boolean, Boolean, LocalTime, LocalTime) -> Unit,
+) {
     settings ?: return
     var start by remember(settings) { mutableStateOf(settings.defaultStartTime.toString()) }
     var duration by remember(settings) { mutableStateOf(settings.defaultDuration.toMinutes().toString()) }
@@ -208,6 +214,9 @@ private fun SettingsScreen(settings: app.syncheroic.core.SyncSettings?, remoteCo
     var behavior by remember(settings) { mutableStateOf(settings.matchedSessionBehavior) }
     var unit by remember(settings) { mutableStateOf(settings.displayWeightUnit) }
     var remoteConfig by remember(remoteConfigEnabled) { mutableStateOf(remoteConfigEnabled) }
+    var frequentEnabled by remember(frequentSync) { mutableStateOf(frequentSync.enabled) }
+    var frequentStart by remember(frequentSync) { mutableStateOf(frequentSync.start.toString()) }
+    var frequentEnd by remember(frequentSync) { mutableStateOf(frequentSync.end.toString()) }
     LazyColumn(Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item { OutlinedTextField(start, { start = it }, label = { Text("Default start time (HH:mm)") }, modifier = Modifier.fillMaxWidth()) }
         item { OutlinedTextField(duration, { duration = it.filter(Char::isDigit) }, label = { Text("Default duration (minutes)") }, modifier = Modifier.fillMaxWidth()) }
@@ -224,6 +233,36 @@ private fun SettingsScreen(settings: app.syncheroic.core.SyncSettings?, remoteCo
             Row { WeightUnit.entries.forEach { value -> TextButton({ unit = value }) { Text(if (unit == value) "✓ ${value.name.lowercase()}" else value.name.lowercase()) } } }
         }
         item {
+            Text("Frequent background sync", style = MaterialTheme.typography.labelLarge)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(frequentEnabled, { frequentEnabled = it })
+                Column {
+                    Text("Sync every 15 minutes during workout window")
+                    Text("Best effort; Android may delay background work.", style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        }
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    frequentStart,
+                    { frequentStart = it },
+                    label = { Text("Window start") },
+                    enabled = frequentEnabled,
+                    singleLine = true,
+                    modifier = Modifier.weight(1f),
+                )
+                OutlinedTextField(
+                    frequentEnd,
+                    { frequentEnd = it },
+                    label = { Text("Window end") },
+                    enabled = frequentEnabled,
+                    singleLine = true,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+        item {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(remoteConfig, { remoteConfig = it })
                 Column {
@@ -234,9 +273,18 @@ private fun SettingsScreen(settings: app.syncheroic.core.SyncSettings?, remoteCo
         }
         item {
             val parsedStart = runCatching { LocalTime.parse(start) }.getOrNull()
+            val parsedFrequentStart = runCatching { LocalTime.parse(frequentStart) }.getOrNull()
+            val parsedFrequentEnd = runCatching { LocalTime.parse(frequentEnd) }.getOrNull()
+            val validFrequentWindow = parsedFrequentStart != null && parsedFrequentEnd != null &&
+                parsedFrequentEnd.isAfter(parsedFrequentStart) &&
+                java.time.Duration.between(parsedFrequentStart, parsedFrequentEnd) >= java.time.Duration.ofMinutes(15)
             Button(
-                enabled = parsedStart != null,
-                onClick = { parsedStart?.let { save(it, duration.toIntOrNull() ?: 60, grace.toIntOrNull() ?: 48, behavior, segments, settings.notesCap, unit, remoteConfig) } },
+                enabled = parsedStart != null && validFrequentWindow,
+                onClick = {
+                    if (parsedStart != null && parsedFrequentStart != null && parsedFrequentEnd != null) {
+                        save(parsedStart, duration.toIntOrNull() ?: 60, grace.toIntOrNull() ?: 48, behavior, segments, settings.notesCap, unit, remoteConfig, frequentEnabled, parsedFrequentStart, parsedFrequentEnd)
+                    }
+                },
             ) { Text("Save settings") }
         }
     }

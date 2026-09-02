@@ -6,6 +6,7 @@ import app.syncheroic.core.MatchedSessionBehavior
 import app.syncheroic.core.SyncSettings
 import app.syncheroic.core.WeightUnit
 import app.syncheroic.data.LocalStateStore
+import app.syncheroic.data.FrequentSyncSettings
 import app.syncheroic.network.TrainHeroicException
 import app.syncheroic.sync.SyncPreview
 import java.time.LocalDate
@@ -24,6 +25,7 @@ data class MainUiState(
     val preview: SyncPreview? = null,
     val settings: SyncSettings? = null,
     val remoteConfigEnabled: Boolean = false,
+    val frequentSync: FrequentSyncSettings = FrequentSyncSettings(),
 )
 
 class MainViewModel(private val container: AppContainer) : ViewModel() {
@@ -57,6 +59,7 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
     fun deleteRecords() = launchOperation("SyncHeroic records deleted") {
         val count = container.syncCoordinator.deleteAll()
         container.stateStore.clear()
+        container.configureFrequentSync(false)
         mutate { copy(preview = null, message = "$count records deleted") }
         refreshData()
     }
@@ -64,6 +67,7 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
     fun signOutAndWipe() = launchOperation("Local data erased") {
         container.trainHeroicClient.signOut()
         container.stateStore.clear()
+        container.configureFrequentSync(false)
         mutate { MainUiState(signedIn = false, message = "Local data erased") }
     }
 
@@ -76,9 +80,14 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
         notesCap: Int,
         unit: WeightUnit,
         remoteConfig: Boolean,
+        frequentSyncEnabled: Boolean,
+        frequentSyncStart: LocalTime,
+        frequentSyncEnd: LocalTime,
     ) = launchOperation("Settings saved") {
         container.stateStore.updateSettings(start, duration, grace, behavior, segments, notesCap, unit)
         container.stateStore.setRemoteConfig(remoteConfig)
+        container.stateStore.setFrequentSync(frequentSyncEnabled, frequentSyncStart, frequentSyncEnd)
+        container.configureFrequentSync(frequentSyncEnabled)
         refreshData()
     }
 
@@ -89,7 +98,8 @@ class MainViewModel(private val container: AppContainer) : ViewModel() {
         val summary = container.stateStore.summary()
         val settings = container.stateStore.settings.first()
         val remoteConfig = container.stateStore.remoteConfigEnabled()
-        mutate { copy(summary = summary, settings = settings, remoteConfigEnabled = remoteConfig) }
+        val frequentSync = container.stateStore.frequentSyncSettings()
+        mutate { copy(summary = summary, settings = settings, remoteConfigEnabled = remoteConfig, frequentSync = frequentSync) }
     }
 
     private fun launchOperation(success: String, operation: suspend () -> Unit) {

@@ -9,6 +9,7 @@ import app.syncheroic.network.EndpointConfigLoader
 import app.syncheroic.network.TrainHeroicClient
 import app.syncheroic.network.RemoteConfigUpdater
 import app.syncheroic.sync.SyncCoordinator
+import app.syncheroic.sync.SyncScheduler
 import app.syncheroic.core.RecordPlanner
 
 class AppContainer(context: Context) {
@@ -25,4 +26,6 @@ class AppContainer(context: Context) {
         planner = RecordPlanner(ExerciseMapLoader.loadBundled()),
         remoteConfigUpdater = RemoteConfigUpdater(),
     )
+
+    fun configureFrequentSync(enabled: Boolean) = SyncScheduler.configureFrequent(appContext, enabled)
 }

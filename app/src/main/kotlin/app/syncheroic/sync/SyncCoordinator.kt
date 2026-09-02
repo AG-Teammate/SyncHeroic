@@ -14,6 +14,8 @@ import java.time.Instant
 import java.time.LocalDate
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 data class SyncPreview(
     val actions: List<PlanAction>,
@@ -35,8 +37,10 @@ class SyncCoordinator(
     private var planner: RecordPlanner = RecordPlanner(emptyMap()),
     private val remoteConfigUpdater: RemoteConfigUpdater? = null,
 ) {
-    suspend fun preview(start: LocalDate, end: LocalDate = LocalDate.now()): SyncPreview {
-        if (state.remoteConfigEnabled()) {
+    private val automaticSyncMutex = Mutex()
+
+    suspend fun preview(start: LocalDate, end: LocalDate = LocalDate.now(), refreshRemoteConfig: Boolean = true): SyncPreview {
+        if (refreshRemoteConfig && state.remoteConfigEnabled()) {
             remoteConfigUpdater?.let { updater ->
                 runCatching { updater.fetch() }.getOrNull()?.let { remote ->
                     trainHeroic.replaceEndpoints(remote.endpoints)
@@ -102,6 +106,15 @@ class SyncCoordinator(
         return SyncPreview(actions, decoded.drift)
     }
 
+    suspend fun automaticSync(start: LocalDate, end: LocalDate, refreshRemoteConfig: Boolean): Boolean = automaticSyncMutex.withLock {
+        val now = Instant.now()
+        val lastAttempt = state.lastAutomaticAttempt()
+        if (lastAttempt != null && java.time.Duration.between(lastAttempt, now) < AUTOMATIC_SYNC_THROTTLE) return false
+        apply(preview(start, end, refreshRemoteConfig))
+        state.markAutomaticAttempt(now)
+        true
+    }
+
     suspend fun apply(preview: SyncPreview): SyncPreview {
         preview.actions.chunked(100).forEachIndexed { chunkIndex, chunk ->
             chunk.forEach { action ->
@@ -136,5 +149,9 @@ class SyncCoordinator(
                 status = status,
             ),
         )
+    }
+
+    private companion object {
+        val AUTOMATIC_SYNC_THROTTLE: java.time.Duration = java.time.Duration.ofMinutes(10)
     }
 }

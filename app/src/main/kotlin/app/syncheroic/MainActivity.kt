@@ -7,8 +7,14 @@ import androidx.activity.enableEdgeToEdge
 import androidx.health.connect.client.PermissionController
 import androidx.lifecycle.ViewModelProvider
 import app.syncheroic.ui.SyncHeroicApp
+import app.syncheroic.sync.SyncScheduler
 
 class MainActivity : ComponentActivity() {
+    override fun onStart() {
+        super.onStart()
+        SyncScheduler.enqueueForeground(this)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
